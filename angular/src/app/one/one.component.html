@@ -1,0 +1,12 @@
+<p>
+  <a routerLink="/">< Back to all articles</a>
+</p>
+<div *ngIf="article$ | async as article; else loading">
+  <h1>{{article.title}}</h1>
+  <p>By {{article.author}} at {{article.createdAt | date}}</p>
+  <p>Tags: {{article.tags}}</p>
+  <div [innerHTML]="article.body"></div>
+</div>
+<ng-template #loading>
+  <p>Loading...</p>
+</ng-template>

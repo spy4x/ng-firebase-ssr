@@ -1,0 +1,9 @@
+<h2>Articles:</h2>
+<ul *ngIf="articles$ | async as articles; else loading">
+  <li *ngFor="let article of articles">
+    <a [routerLink]="['/articles/',article.id]">{{article.title}}</a>
+  </li>
+</ul>
+<ng-template #loading>
+  <p>Loading...</p>
+</ng-template>

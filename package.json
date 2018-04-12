@@ -1,0 +1,14 @@
+{
+  "name": "ng-firebase-ssr",
+  "version": "1.0.0",
+  "description": "Angular Server-side rendering with Express on Firebase Hosting & Firebase Cloud Functions",
+  "main": "index.js",
+  "scripts": {
+    "serve:browser": "npm --prefix \"angular\" run start",
+    "serve:server": "npm run build && firebase serve",
+    "build": "npm --prefix \"angular\" run build && mv firebase/hosting/index.html firebase/functions/dist-server/index.html",
+    "deploy": "firebase deploy"
+  },
+  "author": "Anton Shubin <2spy4x@gmail.com",
+  "license": "MIT"
+}
