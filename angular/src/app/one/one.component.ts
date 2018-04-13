@@ -1,7 +1,8 @@
 import {Component} from '@angular/core';
-import {Meta, Title} from '@angular/platform-browser';
+import {makeStateKey, Meta, Title, TransferState} from '@angular/platform-browser';
 import {ActivatedRoute} from '@angular/router';
 import {AngularFirestore} from 'angularfire2/firestore';
+import {of} from 'rxjs/observable/of';
 import {map, switchMap, tap} from 'rxjs/operators';
 import {Article} from '../article.interface';
 import {unwrapDocSnapshotChanges} from '../firestore.helper';
@@ -15,8 +16,22 @@ import {unwrapDocSnapshotChanges} from '../firestore.helper';
 export class OneComponent {
   article$ = this.activatedRoute.params.pipe(
     map(p => p['id']),
-    switchMap(id => this.db.doc(`articles/${id}`).snapshotChanges()),
-    map(unwrapDocSnapshotChanges),
+    switchMap(id => {
+      const KEY = makeStateKey<Article>('article_' + id);
+      const fromState = this.transferState.get(KEY, null);
+      console.log('fromState:', fromState, 'forKey:', KEY);
+      if (fromState) {
+        fromState.createdAt = new Date(fromState.createdAt);
+        return of(fromState);
+      } else {
+        return this.db.doc(`articles/${id}`).snapshotChanges().pipe(
+          map(unwrapDocSnapshotChanges),
+          tap(v => {
+            console.log('saving article to state:', v);
+            this.transferState.set(KEY, v);
+          }));
+      }
+    }),
     tap((article: Article) => {
       this.title.setTitle(`@spy4x Blog - ${article.title}`);
       this.seo.addTags([
@@ -111,7 +126,8 @@ export class OneComponent {
   constructor(private db: AngularFirestore,
               private activatedRoute: ActivatedRoute,
               private seo: Meta,
-              private title: Title) {
+              private title: Title,
+              private transferState: TransferState) {
   }
 
 }

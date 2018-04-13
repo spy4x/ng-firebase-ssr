@@ -1,9 +1,11 @@
 import {Component} from '@angular/core';
-import {Meta, Title} from '@angular/platform-browser';
-import {AngularFirestore} from 'angularfire2/firestore';
-import {map} from 'rxjs/operators';
+import {makeStateKey, Meta, Title, TransferState} from '@angular/platform-browser';
+import {ActivatedRoute} from '@angular/router';
+import {take, map, switchMap, tap} from 'rxjs/operators';
 import {Article} from '../article.interface';
+import {AngularFirestore} from 'angularfire2/firestore';
 import {unwrapCollectionSnapshotChanges} from '../firestore.helper';
+import {of} from 'rxjs/observable/of';
 
 
 @Component({
@@ -12,9 +14,30 @@ import {unwrapCollectionSnapshotChanges} from '../firestore.helper';
   styleUrls: ['./list.component.css']
 })
 export class ListComponent {
-  articles$ = this.db.collection<Article>('articles').snapshotChanges().pipe(map(unwrapCollectionSnapshotChanges));
+  articles$ = this.activatedRoute.params.pipe(switchMap(() =>{
+    const KEY = makeStateKey<Article[]>('articles');
+    const fromState = this.transferState.get(KEY, null);
+    console.log('fromState:', fromState);
+    if (fromState) {
+      return of(fromState);
+    } else {
+      console.log('fetching value from db');
+      return this.db.collection(`articles`)
+        .snapshotChanges()
+        .pipe(
+          // take(1),
+          map(unwrapCollectionSnapshotChanges),
+          tap((articles: Article[]) => {
+            this.transferState.set(KEY, articles);
+            console.log('transferState.set', articles);
+          }),
+        );
+    }
+  }));
 
-  constructor(private db: AngularFirestore,
+  constructor(private transferState: TransferState,
+              private db: AngularFirestore,
+              private activatedRoute: ActivatedRoute,
               private seo: Meta,
               private title: Title) {
     this.title.setTitle(`@spy4x Blog - Articles`);
